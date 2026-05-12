@@ -8,12 +8,31 @@
     <meta name="theme-color" content="#1e293b">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { -webkit-tap-highlight-color: transparent; }
+        body { -webkit-tap-highlight-color: transparent; overscroll-behavior-y: contain; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
+        
+        /* Estilo para el pull-to-refresh visual */
+        #ptr {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform: translateY(-100%);
+            transition: transform 0.2s;
+            z-index: 0;
+        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-900 font-sans min-h-screen">
+
+    <div id="ptr" class="text-slate-400 text-xs font-bold uppercase tracking-widest">
+        Actualizando...
+    </div>
 
     <!-- Header -->
     <header class="bg-slate-800 text-white p-4 sticky top-0 z-10 shadow-md">
@@ -25,44 +44,56 @@
         </div>
     </header>
 
-    <main class="max-w-md mx-auto p-4 pb-24">
+    <main id="main-content" class="max-w-md mx-auto p-4 pb-24 relative bg-slate-50">
         
         <!-- Tab 1: Registrar -->
         <section id="tab-register" class="tab-content active">
             <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-6">
                 <form id="expense-form" class="space-y-4">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Monto</label>
-                        <input type="number" id="amount" placeholder="0.00" required inputmode="decimal"
-                            class="w-full text-3xl font-bold border-b-2 border-slate-200 focus:border-blue-500 outline-none py-2 transition-colors">
+                    <div class="flex gap-4">
+                        <div class="flex-1">
+                            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Monto</label>
+                            <input type="number" id="amount" placeholder="0.00" required inputmode="decimal"
+                                class="w-full text-2xl font-bold border-b-2 border-slate-200 focus:border-blue-500 outline-none py-1 transition-colors">
+                        </div>
+                        <div class="w-32">
+                            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Fecha</label>
+                            <input type="date" id="expense-date" class="w-full text-sm border-b-2 border-slate-200 focus:border-blue-500 outline-none py-2 bg-transparent">
+                        </div>
                     </div>
                     
                     <div>
                         <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Descripción</label>
                         <input type="text" id="description" placeholder="¿En qué gastaste?" required
-                            class="w-full border-b-2 border-slate-200 focus:border-blue-500 outline-none py-2 transition-colors">
+                            class="w-full border-b-2 border-slate-200 focus:border-blue-500 outline-none py-1 transition-colors">
                     </div>
 
                     <div>
                         <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Método de Pago</label>
-                        <div class="flex gap-2 mt-2">
-                            <label class="flex-1">
+                        <div class="grid grid-cols-3 gap-2 mt-2">
+                            <label>
                                 <input type="radio" name="method" value="Efectivo" checked class="hidden peer">
-                                <div class="text-center p-3 rounded-xl border-2 border-slate-100 peer-checked:border-blue-500 peer-checked:bg-blue-50 peer-checked:text-blue-700 cursor-pointer transition-all">
+                                <div class="text-[10px] sm:text-xs font-bold text-center p-2 rounded-lg border-2 border-slate-100 peer-checked:border-green-500 peer-checked:bg-green-50 peer-checked:text-green-700 cursor-pointer transition-all h-full flex flex-col justify-center">
                                     💵 Efectivo
                                 </div>
                             </label>
-                            <label class="flex-1">
-                                <input type="radio" name="method" value="Billetera" class="hidden peer">
-                                <div class="text-center p-3 rounded-xl border-2 border-slate-100 peer-checked:border-blue-500 peer-checked:bg-blue-50 peer-checked:text-blue-700 cursor-pointer transition-all">
-                                    📱 Virtual
+                            <label>
+                                <input type="radio" name="method" value="Mercado Pago" class="hidden peer">
+                                <div class="text-[10px] sm:text-xs font-bold text-center p-2 rounded-lg border-2 border-slate-100 peer-checked:border-blue-500 peer-checked:bg-blue-50 peer-checked:text-blue-700 cursor-pointer transition-all h-full flex flex-col justify-center">
+                                    💙 MP
+                                </div>
+                            </label>
+                            <label>
+                                <input type="radio" name="method" value="Cuenta DNI" class="hidden peer">
+                                <div class="text-[10px] sm:text-xs font-bold text-center p-2 rounded-lg border-2 border-slate-100 peer-checked:border-green-600 peer-checked:bg-green-50 peer-checked:text-green-800 cursor-pointer transition-all h-full flex flex-col justify-center">
+                                    💚 DNI
                                 </div>
                             </label>
                         </div>
                     </div>
 
                     <div class="pt-2">
-                        <button type="submit" class="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl shadow-lg shadow-blue-200 active:scale-95 transition-transform">
+                        <button type="submit" class="w-full bg-slate-800 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-transform">
                             Guardar Gasto
                         </button>
                     </div>
@@ -70,23 +101,19 @@
             </div>
 
             <h2 class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-3">Gastos de hoy</h2>
-            <div id="today-list" class="space-y-3">
-                <!-- Items de hoy aparecerán aquí -->
-            </div>
+            <div id="today-list" class="space-y-3"></div>
         </section>
 
         <!-- Tab 2: Historial -->
         <section id="tab-history" class="tab-content">
             <h2 class="text-lg font-bold text-slate-800 mb-4">Historial Completo</h2>
-            <div id="full-history-list" class="space-y-6">
-                <!-- Grupos por fecha aparecerán aquí -->
-            </div>
+            <div id="full-history-list" class="space-y-6"></div>
         </section>
 
     </main>
 
-    <!-- Bottom Navigation -->
-    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-6 py-3 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
+    <!-- Navigation -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-6 py-3 shadow-lg">
         <div class="max-w-md mx-auto flex justify-around items-center">
             <button onclick="switchTab('register')" id="btn-reg" class="flex flex-col items-center gap-1 text-blue-600">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -105,40 +132,45 @@
 
     <script>
         let expenses = JSON.parse(localStorage.getItem('expenses')) || [];
+        
+        // Inicializar fecha
+        const dateInput = document.getElementById('expense-date');
+        const today = new Date().toISOString().split('T')[0];
+        dateInput.value = today;
 
         const form = document.getElementById('expense-form');
         const todayList = document.getElementById('today-list');
         const historyList = document.getElementById('full-history-list');
         const todayTotalEl = document.getElementById('today-total');
 
-        // Render functions
         function render() {
             const todayStr = new Date().toLocaleDateString();
-            const todayExpenses = expenses.filter(e => new Date(e.date).toLocaleDateString() === todayStr);
+            // Filtrar comparando fechas locales
+            const todayExpenses = expenses.filter(e => new Date(e.date + 'T00:00:00').toLocaleDateString() === todayStr);
             
-            // Update Today Total
             const total = todayExpenses.reduce((sum, e) => sum + parseFloat(e.amount), 0);
             todayTotalEl.innerText = `Hoy: $${total.toLocaleString()}`;
 
-            // Render Today's List
             todayList.innerHTML = todayExpenses.length ? '' : '<p class="text-slate-400 text-center py-4">Sin gastos hoy</p>';
-            todayExpenses.reverse().forEach(e => {
+            [...todayExpenses].reverse().forEach(e => {
                 todayList.innerHTML += createExpenseCard(e);
             });
 
-            // Render Full History
             renderHistory();
             localStorage.setItem('expenses', JSON.stringify(expenses));
         }
 
         function createExpenseCard(e) {
-            const methodColor = e.method === 'Efectivo' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700';
-            const icon = e.method === 'Efectivo' ? '💵' : '📱';
+            let colorClass = 'bg-slate-100 text-slate-600';
+            if (e.method === 'Efectivo') colorClass = 'bg-green-100 text-green-700';
+            if (e.method === 'Mercado Pago') colorClass = 'bg-blue-100 text-blue-700';
+            if (e.method === 'Cuenta DNI') colorClass = 'bg-emerald-100 text-emerald-800';
+
             return `
                 <div class="bg-white p-4 rounded-xl border border-slate-100 flex justify-between items-center shadow-sm">
                     <div>
                         <p class="font-bold text-slate-800">${e.description}</p>
-                        <span class="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${methodColor}">${icon} ${e.method}</span>
+                        <span class="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${colorClass}">${e.method}</span>
                     </div>
                     <div class="text-right">
                         <p class="text-lg font-black text-slate-900">$${parseFloat(e.amount).toLocaleString()}</p>
@@ -151,28 +183,22 @@
         function renderHistory() {
             historyList.innerHTML = '';
             const groups = expenses.reduce((acc, e) => {
-                const date = new Date(e.date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                if (!acc[date]) acc[date] = [];
-                acc[date].push(e);
+                const dateObj = new Date(e.date + 'T00:00:00');
+                const dateLabel = dateObj.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                if (!acc[dateLabel]) acc[dateLabel] = [];
+                acc[dateLabel].push(e);
                 return acc;
             }, {});
 
             Object.keys(groups).sort((a, b) => new Date(groups[b][0].date) - new Date(groups[a][0].date)).forEach(date => {
                 let dayTotal = groups[date].reduce((sum, e) => sum + parseFloat(e.amount), 0);
-                let section = `<div class="space-y-3">
-                    <div class="flex justify-between items-end border-b border-slate-200 pb-1">
-                        <h3 class="text-xs font-bold text-slate-400 uppercase">${date}</h3>
-                        <span class="text-xs font-bold text-slate-800">Total: $${dayTotal.toLocaleString()}</span>
-                    </div>`;
-                groups[date].reverse().forEach(e => {
-                    section += createExpenseCard(e);
-                });
-                section += '</div>';
+                let section = `<div class="mb-8"><h3 class="text-xs font-bold text-slate-400 uppercase border-b border-slate-200 mb-3 flex justify-between"><span>${date}</span><span>$${dayTotal.toLocaleString()}</span></h3><div class="space-y-2">`;
+                [...groups[date]].reverse().forEach(e => { section += createExpenseCard(e); });
+                section += '</div></div>';
                 historyList.innerHTML += section;
             });
         }
 
-        // Logic
         form.addEventListener('submit', (e) => {
             e.preventDefault();
             const newExpense = {
@@ -180,10 +206,11 @@
                 amount: document.getElementById('amount').value,
                 description: document.getElementById('description').value,
                 method: document.querySelector('input[name="method"]:checked').value,
-                date: new Date().toISOString()
+                date: document.getElementById('expense-date').value
             };
             expenses.push(newExpense);
             form.reset();
+            dateInput.value = today; // reset date to today
             render();
         });
 
@@ -197,24 +224,37 @@
         window.switchTab = (tab) => {
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             document.getElementById('tab-' + tab).classList.add('active');
-            
-            // UI Updates
             const btnReg = document.getElementById('btn-reg');
             const btnHist = document.getElementById('btn-hist');
             if(tab === 'register') {
-                btnReg.classList.add('text-blue-600'); btnReg.classList.remove('text-slate-400');
-                btnHist.classList.add('text-slate-400'); btnHist.classList.remove('text-blue-600');
+                btnReg.className = "flex flex-col items-center gap-1 text-blue-600";
+                btnHist.className = "flex flex-col items-center gap-1 text-slate-400";
             } else {
-                btnHist.classList.add('text-blue-600'); btnHist.classList.remove('text-slate-400');
-                btnReg.classList.add('text-slate-400'); btnReg.classList.remove('text-blue-600');
+                btnHist.className = "flex flex-col items-center gap-1 text-blue-600";
+                btnReg.className = "flex flex-col items-center gap-1 text-slate-400";
             }
         }
 
-        // Service Worker Registration
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js');
-        }
+        // Lógica de Pull-to-refresh
+        let touchStart = 0;
+        const ptr = document.getElementById('ptr');
+        window.addEventListener('touchstart', e => { touchStart = e.touches[0].pageY; });
+        window.addEventListener('touchmove', e => {
+            const touch = e.touches[0].pageY;
+            const diff = touch - touchStart;
+            if (window.scrollY === 0 && diff > 0) {
+                ptr.style.transform = `translateY(${Math.min(diff, 50) - 50}px)`;
+            }
+        });
+        window.addEventListener('touchend', e => {
+            const diff = e.changedTouches[0].pageY - touchStart;
+            if (window.scrollY === 0 && diff > 80) {
+                location.reload();
+            }
+            ptr.style.transform = 'translateY(-100%)';
+        });
 
+        if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
         render();
     </script>
 </body>
