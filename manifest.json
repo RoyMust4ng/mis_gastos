@@ -8,7 +8,7 @@
   "theme_color": "#1e293b",
   "icons": [
     {
-      "src": "https://raw.githubusercontent.com/RoyMust4ng/mis_gastos/refs/heads/main/money-stack.png",
+      "src": "https://github.com/RoyMust4ng/mis_gastos/blob/6289e1caa4684e9467a0ea2a828f389417305e64/money-stack.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
