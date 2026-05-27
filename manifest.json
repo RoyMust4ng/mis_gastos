@@ -2,11 +2,11 @@
   "name": "Mis Gastos Diarios",
   "short_name": "Gastos",
   "description": "Control personal de gastos en efectivo y billetera virtual.",
-  "start_url": "/mis-gastos/",
+  "start_url": "/mis_gastos/",
   "display": "standalone",
   "background_color": "#f8fafc",
   "theme_color": "#1e293b",
-  "scope": "/mis-gastos/",
+  "scope": "/mis_gastos/",
   "icons": [
     {
       "src": "https://cdn-icons-png.flaticon.com/512/9590/9590121.png",
