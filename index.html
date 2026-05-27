@@ -91,6 +91,13 @@
     </nav>
 
     <script>
+
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.register('./sw.js', { scope: './' })
+            .then(reg => console.log('Service Worker registrado con éxito', reg))
+            .catch(err => console.log('Error al registrar el SW', err));
+        }
+        
         function getArgentinaDate() {
             const now = new Date();
             return new Intl.DateTimeFormat('en-CA', { 
